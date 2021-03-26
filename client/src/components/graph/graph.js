@@ -10,6 +10,7 @@ import { Button } from "@blueprintjs/core";
 import setupSVGandBrushElements from "./setupSVGandBrush";
 import _camera from "../../util/camera";
 import _drawPoints from "./drawPointsRegl";
+import _drawSpatialImage from "./drawSpatialImageRegl";
 import {
   createColorTable,
   createColorQuery,
@@ -86,6 +87,7 @@ class Graph extends React.Component {
     const camera = _camera(canvas);
     const regl = _regl(canvas);
     const drawPoints = _drawPoints(regl);
+    const drawSpatialImage = _drawSpatialImage(regl);
 
     // preallocate webgl buffers
     const pointBuffer = regl.buffer();
@@ -99,6 +101,7 @@ class Graph extends React.Component {
       pointBuffer,
       colorBuffer,
       flagBuffer,
+      drawSpatialImage,
     };
   }
 
@@ -231,6 +234,7 @@ class Graph extends React.Component {
       pointBuffer: null,
       colorBuffer: null,
       flagBuffer: null,
+      drawSpatialImage: null,
 
       // component rendering derived state - these must stay synchronized
       // with the reducer state they were generated from.
@@ -387,6 +391,15 @@ class Graph extends React.Component {
     return { toolSVG: newToolSVG, tool, container };
   };
 
+  loadTextureFromUrl = (src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  };
+
   fetchAsyncProps = async (props) => {
     const {
       annoMatrix,
@@ -426,6 +439,10 @@ class Graph extends React.Component {
       colorByData,
       pointDilationData,
       pointDilationLabel
+    );
+    // horrible way of calling the API
+    this.spatialImage = await this.loadTextureFromUrl(
+      "/api/v0.2/spatial/image"
     );
 
     const { width, height } = viewport;
@@ -720,6 +737,7 @@ class Graph extends React.Component {
       flagBuffer,
       camera,
       projectionTF,
+      drawSpatialImage,
     } = this.state;
     this.renderPoints(
       regl,
@@ -728,7 +746,8 @@ class Graph extends React.Component {
       pointBuffer,
       flagBuffer,
       camera,
-      projectionTF
+      projectionTF,
+      drawSpatialImage
     );
   });
 
@@ -795,7 +814,8 @@ class Graph extends React.Component {
     pointBuffer,
     flagBuffer,
     camera,
-    projectionTF
+    projectionTF,
+    drawSpatialImage
   ) {
     const { annoMatrix } = this.props;
     if (!this.reglCanvas || !annoMatrix) return;
@@ -807,7 +827,7 @@ class Graph extends React.Component {
     regl.poll();
     regl.clear({
       depth: 1,
-      color: [1, 1, 1, 1],
+      color: [0, 0, 0, 0], // make pints background transparent
     });
     drawPoints({
       distance: camera.distance(),
@@ -818,6 +838,12 @@ class Graph extends React.Component {
       projView,
       nPoints: schema.dataframe.nObs,
       minViewportDimension: Math.min(width, height),
+    });
+    drawSpatialImage({
+      projView,
+      spatialImageAsTexture: regl.texture({
+        data: this.spatialImage,
+      }),
     });
     regl._gl.flush();
   }
