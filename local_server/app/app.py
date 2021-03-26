@@ -161,6 +161,12 @@ class GenesetSummaryAPI(Resource):
         return common_rest.geneset_summary_get(request, data_adaptor)
 
 
+class SpatialImageAPI(Resource):
+    @rest_get_data_adaptor
+    def get(self, data_adaptor):
+        return common_rest.spatial_image_get(request, data_adaptor)
+
+
 def get_api_base_resources(bp_base):
     """Add resources that are accessed from the api url"""
     api = Api(bp_base)
@@ -193,6 +199,8 @@ def get_api_dataroot_resources(bp_dataroot):
     # Computation routes
     add_resource(DiffExpObsAPI, "/diffexp/obs")
     add_resource(LayoutObsAPI, "/layout/obs")
+    # Spatial routes
+    add_resource(SpatialImageAPI, "/spatial/image")
     return api
 
 

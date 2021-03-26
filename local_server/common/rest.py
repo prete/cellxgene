@@ -4,7 +4,7 @@ import sys
 from http import HTTPStatus
 import zlib
 
-from flask import make_response, jsonify, current_app, abort
+from flask import make_response, jsonify, current_app, abort,send_file
 from werkzeug.urls import url_unquote
 
 from local_server.common.config.client_config import get_client_config, get_client_userinfo
@@ -410,3 +410,41 @@ def geneset_summary_get(request, data_adaptor):
         return abort(HTTPStatus.NOT_FOUND, description=str(e))
     except (UnsupportedSummaryMethod) as e:
         return abort(HTTPStatus.BAD_REQUEST, description=str(e))
+
+
+
+def spatial_image_get(request, data_adaptor):
+    import io
+    import matplotlib.pyplot    
+    
+    resolution = "hires"
+    spatial = data_adaptor.get_spatial()
+    
+    if len(list(spatial))==0:
+        return abort_and_log(HTTPStatus.BAD_REQUEST, "uns does not have spatial information")
+    
+    library_id = list(spatial)[0]
+    if len(spatial)>1:
+        current_app.logger.warning(f"More than one library found under uns.spatial, using library '{library_id}'")
+    
+    if "images" not in spatial[library_id]:
+        return abort_and_log(HTTPStatus.BAD_REQUEST, "spatial information does not contain images")
+    
+    if resolution not in spatial[library_id]["images"]:
+        return abort_and_log(HTTPStatus.BAD_REQUEST, f"spatial information does not contain requested resolution '{resolution}'")
+
+    response_image = io.BytesIO()
+    matplotlib.pyplot.imsave(response_image, spatial[library_id]["images"][resolution])
+    response_image.seek(0)
+
+    try:
+        return send_file(response_image, attachment_filename=f"{library_id}-{resolution}.png", mimetype="image/png")
+    except (KeyError, DatasetAccessError) as e:
+        return abort_and_log(HTTPStatus.BAD_REQUEST, str(e), include_exc_info=True)
+    except PrepareError:
+        return abort_and_log(
+            HTTPStatus.NOT_IMPLEMENTED,
+            f"No spatial image available {request.path}",
+            loglevel=logging.ERROR,
+            include_exc_info=True,
+        )

@@ -394,3 +394,6 @@ class AnndataAdaptor(DataAdaptor):
             mean = X.mean(axis=1, keepdims=True)
         col_idx = pd.Index([geneset_name])
         return encode_matrix_fbs(mean, col_idx=col_idx, row_idx=None)
+
+    def get_spatial(self):
+        return self.data.uns["spatial"]
