@@ -52,6 +52,7 @@ def get_client_config(app_config, data_adaptor):
         "annotations_cell_ontology_terms": None,
         "custom_colors": dataset_config.presentation__custom_colors,
         "diffexp-may-be-slow": False,
+        "enable_spatial_image": dataset_config.spatial_image__enable,
     }
 
     # corpora dataset_props

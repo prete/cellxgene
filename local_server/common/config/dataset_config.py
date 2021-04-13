@@ -44,6 +44,8 @@ class DatasetConfig(BaseConfig):
             self.diffexp__lfc_cutoff = default_config["diffexp"]["lfc_cutoff"]
             self.diffexp__top_n = default_config["diffexp"]["top_n"]
 
+            self.spatial_image__enable = default_config["spatial_image"]["enable"]
+
         except KeyError as e:
             raise ConfigurationError(f"Unexpected config: {str(e)}")
 
@@ -56,6 +58,7 @@ class DatasetConfig(BaseConfig):
         self.handle_user_annotations(context)
         self.handle_embeddings()
         self.handle_diffexp(context)
+        self.handle_spatial_image()
 
     def get_data_adaptor(self):
         server_config = self.app_config.server_config
@@ -220,3 +223,6 @@ class DatasetConfig(BaseConfig):
             context["messagefn"](
                 "CAUTION: due to the size of your dataset, " "running differential expression may take longer or fail."
             )
+
+    def handle_spatial_image(self):
+        self.validate_correct_type_of_configuration_attribute("spatial_image__enable", bool)

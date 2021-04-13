@@ -129,6 +129,13 @@ def config_args(func):
         hidden=True,
         help="Enable experimental on-demand re-embedding using UMAP. WARNING: may be very slow.",
     )
+    @click.option(
+        "--experimental-enable-spatial-image",
+        is_flag=True,
+        default=False,
+        show_default=True,
+        help="Use visium spatial image embedded from the input file as background for embeddings.",
+    )
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
@@ -341,6 +348,7 @@ def launch(
     experimental_annotations_ontology,
     experimental_annotations_ontology_obo,
     experimental_enable_reembedding,
+    experimental_enable_spatial_image,
     config_file,
     dump_default_config,
 ):
@@ -404,6 +412,7 @@ def launch(
             embeddings__enable_reembedding=experimental_enable_reembedding,
             diffexp__enable=not disable_diffexp,
             diffexp__lfc_cutoff=diffexp_lfc_cutoff,
+            spatial_image__enable=experimental_enable_spatial_image,
         )
 
         diff = cli_config.server_config.changes_from_default()

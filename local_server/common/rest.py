@@ -414,8 +414,12 @@ def geneset_summary_get(request, data_adaptor):
 
 
 def spatial_image_get(request, data_adaptor):
+
+    if not data_adaptor.dataset_config.spatial_image__enable:
+        return make_response(jsonify({}), HTTPStatus.OK)
+
     import io
-    import matplotlib.pyplot    
+    import matplotlib.pyplot
     
     resolution = "hires"
     spatial = data_adaptor.get_spatial()
