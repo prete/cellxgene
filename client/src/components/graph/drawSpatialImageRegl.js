@@ -12,11 +12,10 @@ export default function drawSpatialImageRegl(regl) {
       precision mediump float;
       attribute vec2 position;
       varying vec2 uv;
-      const float zMiddle = 0.;
       uniform mat3 projView;
-      
+      uniform vec2 scale;
       vec2 norm(vec2 position) {
-        return ((position - 0.5) * 2.0) * vec2(1., -1.);
+        return ((position - 0.5) * 2.0) * scale;
       }
       void main() {
         uv = position;
@@ -25,14 +24,41 @@ export default function drawSpatialImageRegl(regl) {
       }`,
 
     attributes: {
-      position: [-1, 1, -1, -1, 1, -1, 1, -1, 1, 1, -1, 1],
+      /*
+       * Position are the 6 vertices required to draw two triangles:
+       *  - 6 positions are the 3 vertices of triangle A
+       *  - 6 positions are the 3 vertices of triangle B.
+       * The spatial image will be the texture of those two triangles.
+       *
+       *  (-1, 1)   _________  (1, 1)
+       *           |\        | 
+       *           |  \   B  |  
+       *           |    \    |  
+       *           |  A   \  |
+       *  (-1, -1) |________\|   (1, -1)
+       */
+      position: [
+        //Triangle A-------------
+        -1, 1,
+        -1, -1,
+        1, -1,
+        //Triangle B-------------
+        1, -1,
+        1, 1,
+        -1, 1 
+      ],
     },
 
     uniforms: {
+      //distance: regl.prop("distance"),
+      //minViewportDimension: regl.prop("minViewportDimension"),
+      scale: regl.prop("scale"),
+      //offset: regl.prop("offset"),
       projView: regl.prop("projView"),
       texture: regl.prop("spatialImageAsTexture"),
     },
 
     count: 6,
+
   });
 }

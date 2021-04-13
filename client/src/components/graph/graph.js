@@ -27,6 +27,7 @@ import {
   flagSelected,
   flagHighlight,
 } from "../../util/glHelpers";
+import { CONSOLE } from "@blueprintjs/icons/lib/esm/generated/iconContents";
 
 /*
 Simple 2D transforms control all point painting.  There are three:
@@ -49,6 +50,7 @@ function createProjectionTF(viewportWidth, viewportHeight) {
     (fractionToUse * minDim) / viewportWidth,
     (fractionToUse * minDim) / viewportHeight,
   ];
+
   const m = mat3.create();
   mat3.fromTranslation(m, [
     0,
@@ -396,6 +398,7 @@ class Graph extends React.Component {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = reject;
+      img.crossOrigin = 'anonymous';
       img.src = src;
     });
   };
@@ -440,9 +443,10 @@ class Graph extends React.Component {
       pointDilationData,
       pointDilationLabel
     );
+    
     // horrible way of calling the API
     this.spatialImage = await this.loadTextureFromUrl(
-      "/api/v0.2/spatial/image"
+      `${globals.API.prefix}${globals.API.version}spatial/image`
     );
 
     const { width, height } = viewport;
@@ -827,7 +831,7 @@ class Graph extends React.Component {
     regl.poll();
     regl.clear({
       depth: 1,
-      color: [0, 0, 0, 0], // make pints background transparent
+      color: [0, 0, 0, 0], // make points background transparent
     });
     drawPoints({
       distance: camera.distance(),
@@ -839,11 +843,25 @@ class Graph extends React.Component {
       nPoints: schema.dataframe.nObs,
       minViewportDimension: Math.min(width, height),
     });
+    
+    // this still doest not work
+    // finish texture is offset by some reason
+    const scaleFactor = [
+      1.0 + (width / this.spatialImage.width),
+      1.0 + (height / this.spatialImage.height),
+    ];
+
+    const spatialImageTexture = regl.texture({
+      data: this.spatialImage,
+    })
+
     drawSpatialImage({
+      distance: camera.distance(),//magic
+      minViewportDimension: Math.min(width, height),//magic
+      scale: scaleFactor,
+      offset: [0.0, 0.0],
       projView,
-      spatialImageAsTexture: regl.texture({
-        data: this.spatialImage,
-      }),
+      spatialImageAsTexture: spatialImageTexture
     });
     regl._gl.flush();
   }
